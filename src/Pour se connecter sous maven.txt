@@ -1,0 +1,61 @@
+Pour se connecter sous maven
+
+1. Ajouter la dépendance MySQL
+
+Commencez par ajouter la dépendance MySQL Connector/J à votre fichier pom.xml comme décrit précédemment :
+
+pom.xml
+
+<dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+    <version>8.0.28</version>
+</dependency>
+ou équivalente..... par rapport à ce que tu trouves
+
+2. Définir les propriétés de connexion
+
+Créez un fichier de configuration pour stocker les propriétés de connexion à la base de données. Vous pouvez l'appeler db.properties et le placer dans le dossier src/main/resources de votre projet.
+
+Fichier db.properties:
+
+Properties
+url=jdbc:mysql://localhost:3306/ma_base_de_donnees
+username=mon_utilisateur
+password=mon_mot_de_passe
+
+
+3. Établir la connexion
+
+Dans votre code Java, chargez les propriétés du fichier db.properties et utilisez-les pour établir une connexion à la base de données MySQL. Voici un exemple :
+
+Java
+import java.sql.*;
+
+public class ConnexionBDD {
+
+    private static Connection connection;
+
+    public static Connection getConnection() throws SQLException {
+        if (connection == null) {
+            Properties props = new Properties();
+            try {
+                props.load(ClassLoader.getSystemResourceAsStream("db.properties"));
+                String url = props.getProperty("url");
+                String username = props.getProperty("username");
+                String password = props.getProperty("password");
+                connection = DriverManager.getConnection(url, username, password);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return connection;
+    }
+
+    public static void closeConnection() throws SQLException {
+        if (connection != null) {
+            connection.close();
+            connection = null;
+        }
+    }
+}
