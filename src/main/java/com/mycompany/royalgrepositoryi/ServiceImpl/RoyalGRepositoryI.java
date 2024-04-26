@@ -4,11 +4,14 @@
  */
 package com.mycompany.royalgrepositoryi.ServiceImpl;
 
+import FatoryForEntityFramework.EntityManagerFactoryProvider;
 import com.mycompany.royalgrepositoryi.Service.RoyalGRepository;
 import java.io.Serializable;
 import java.util.List;
 import javax.persistence.EntityExistsException;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceException;
 import javax.persistence.Query;
@@ -19,12 +22,14 @@ import javax.persistence.Query;
  */
 public class RoyalGRepositoryI<T extends Serializable, K> implements RoyalGRepository<T,K> {
 
-    @PersistenceContext
-    protected EntityManager entityM;
+    private final EntityManagerFactory emf;
+    private final EntityManager entityManager;
     private Class<T> myObjet;
 
     public RoyalGRepositoryI(Class<T> myObjet) {
         this.myObjet = myObjet;
+        this.emf = EntityManagerFactoryProvider.getEntityManagerFactory();
+        this.entityManager = emf.createEntityManager();
     }
     
     
@@ -32,8 +37,15 @@ public class RoyalGRepositoryI<T extends Serializable, K> implements RoyalGRepos
     @Override
     public void save(T t) {
         assert t!=null;
+        EntityTransaction transaction = null;
         try{
-            this.entityM.persist(t);
+            transaction = entityManager.getTransaction();
+            transaction.begin();
+            this.entityManager.persist(t);
+             entityManager.flush(); // Synchronisation des changements avec la base de données
+        
+            transaction.commit();
+            System.out.println("enregistrement effectué!");
         }catch(EntityExistsException exception){
             System.out.println("Erreur dans votre requête monsieur ou madame reverifier+ "+exception.getMessage());
         }catch(PersistenceException ex){
@@ -43,7 +55,7 @@ public class RoyalGRepositoryI<T extends Serializable, K> implements RoyalGRepos
 
     @Override
     public List<T> findAll() {
-        Query req= this.entityM.createQuery("select t from "+this.myObjet.getSimpleName()+ "t");
+        Query req= this.entityManager.createQuery("select t from "+this.myObjet.getSimpleName()+ "t");
         if(req.getResultList()==null){
             System.out.println("Aucun élentityMent trouver en base");
         }
@@ -52,13 +64,13 @@ public class RoyalGRepositoryI<T extends Serializable, K> implements RoyalGRepos
 
     @Override
     public T findById(K k) {
-        return this.entityM.find(this.myObjet,k);
+        return this.entityManager.find(this.myObjet,k);
     }
 
     @Override
     public void deleteById(K k) {
         assert k!=null;
-        this.entityM.remove(this.findById(k));
+        this.entityManager.remove(this.findById(k));
     }
     
 }
